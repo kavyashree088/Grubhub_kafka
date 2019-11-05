@@ -1,0 +1,50 @@
+.login {
+  max-width: 420px;
+  width: auto;
+  margin: 0 auto;
+  margin-top: 20px;
+}
+.u-dimension-1 {
+  box-shadow: 0 0 0 1px rgba(67, 41, 163, 0.08),
+    0 1px 5px 0 rgba(67, 41, 163, 0.08);
+  border-radius: 3px;
+  background: #fff;
+  padding: 32px;
+}
+@media (min-width: 768px) {
+  .sidebar-nav .navbar .navbar-collapse {
+    padding: 0;
+    max-height: none;
+  }
+  .sidebar-nav .navbar ul {
+    float: none;
+    display: block;
+  }
+  .sidebar-nav .navbar li {
+    float: none;
+    display: block;
+  }
+  .sidebar-nav .navbar li a {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .navbar-collapse {
+    display: block !important;
+  }
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+.orderItem-quantity {
+  flex: 0 0 20px;
+  padding: 20px 0 0;
+}
+.u-text-right {
+  text-align: right;
+}
