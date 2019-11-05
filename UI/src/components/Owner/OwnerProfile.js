@@ -5,6 +5,7 @@ import * as actionCreators from "../../js/actions/ownerActions";
 import { Row, Col, Container, Button, Toast, Image } from "react-bootstrap";
 import "../../css/sidebar.css";
 import Form from "react-bootstrap/Form";
+import { rooturl } from "../../config/constants";
 
 class OwnerProfile extends Component {
   constructor(props) {
@@ -575,7 +576,7 @@ class OwnerProfile extends Component {
             </Form.Group>
             <div>
               <Image
-                src={`http://localhost:3001/uploads/${this.state.image}`}
+                src={`http://${rooturl}:3001/uploads/${this.state.image}`}
               ></Image>
             </div>
             <Form.Group enctype="multipart/form-data" className="pt-3">
@@ -617,7 +618,7 @@ class OwnerProfile extends Component {
             </label>
             <div>
               <Image
-                src={`http://localhost:3001/uploads/${this.state.image}`}
+                src={`http://${rooturl}:3001/uploads/${this.state.image}`}
               ></Image>
             </div>
             <label className="pt-2">

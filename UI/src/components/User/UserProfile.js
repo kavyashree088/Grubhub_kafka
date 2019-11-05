@@ -6,6 +6,7 @@ import { Row, Col, Container, Button, Toast, Image } from "react-bootstrap";
 import "../../css/sidebar.css";
 import Form from "react-bootstrap/Form";
 import cookie from "react-cookies";
+import { rooturl } from "../../config/constants";
 
 class UserProfile extends Component {
   constructor(props) {
@@ -435,7 +436,7 @@ class UserProfile extends Component {
                 </Row>
                 <div>
                   <Image
-                    src={`http://localhost:3001/uploads/${this.props.profile.profilePic}`}
+                    src={`http://${rooturl}:3001/uploads/${this.props.profile.profilePic}`}
                     style={{
                       height: "200px",
                       width: "200px"

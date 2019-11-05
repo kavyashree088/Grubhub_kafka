@@ -32,6 +32,7 @@ class Navigation extends Component {
     if (localStorage.getItem("userType")) {
       let name = "";
       if (localStorage.getItem("userType") === "owner") {
+        path = "/OwnerHome";
         if (!this.props.owner) {
           name = "";
         } else {
@@ -59,7 +60,6 @@ class Navigation extends Component {
           </Nav>
         );
       } else {
-        console.log("cookie");
         path = "/UserHome";
         if (!this.props.user) {
           name = "";

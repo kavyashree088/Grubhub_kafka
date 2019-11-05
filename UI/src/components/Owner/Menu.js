@@ -14,6 +14,7 @@ import "../../css/sidebar.css";
 import "../../css/grubhub.css";
 import Form from "react-bootstrap/Form";
 import * as actionCreators from "../../js/actions/ownerActions";
+import { rooturl } from "../../config/constants";
 
 class Menu extends Component {
   constructor(props) {
@@ -316,7 +317,7 @@ class Menu extends Component {
             <td>
               {menu.image ? (
                 <Image
-                  src={`http://localhost:3001/uploads/${menu.image}`}
+                  src={`http://${rooturl}:3001/uploads/${menu.image}`}
                   style={{
                     height: "100px",
                     width: "100px"
@@ -360,7 +361,7 @@ class Menu extends Component {
             <td>
               {menu.image ? (
                 <Image
-                  src={`http://localhost:3001/uploads/${menu.image}`}
+                  src={`http://${rooturl}:3001/uploads/${menu.image}`}
                   style={{
                     height: "100px",
                     width: "100px"
@@ -404,7 +405,7 @@ class Menu extends Component {
             <td>
               {menu.image ? (
                 <Image
-                  src={`http://localhost:3001/uploads/${menu.image}`}
+                  src={`http://${rooturl}:3001/uploads/${menu.image}`}
                   style={{
                     height: "100px",
                     width: "100px"
@@ -711,7 +712,7 @@ class Menu extends Component {
                           <Col>
                             {this.state.modal.image ? (
                               <Image
-                                src={`http://localhost:3001/uploads/${this.state.modal.image}`}
+                                src={`http://${rooturl}:3001/uploads/${this.state.modal.image}`}
                                 style={{
                                   height: "100px",
                                   width: "100px"

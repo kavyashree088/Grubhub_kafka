@@ -124,7 +124,7 @@ class DetailsPage extends Component {
                   <Col>
                     {menu.image ? (
                       <Image
-                        src={`http://localhost:3001/uploads/${menu.image}`}
+                        src={`http://${rooturl}:3001/uploads/${menu.image}`}
                         style={{
                           height: "100px",
                           width: "100px"
@@ -172,7 +172,7 @@ class DetailsPage extends Component {
                   <Col>
                     {menu.image ? (
                       <Image
-                        src={`http://localhost:3001/uploads/${menu.image}`}
+                        src={`http://${rooturl}:3001/uploads/${menu.image}`}
                         style={{
                           height: "100px",
                           width: "100px"
@@ -220,7 +220,7 @@ class DetailsPage extends Component {
                   <Col>
                     {menu.image ? (
                       <Image
-                        src={`http://localhost:3001/uploads/${menu.image}`}
+                        src={`http://${rooturl}:3001/uploads/${menu.image}`}
                         style={{
                           height: "100px",
                           width: "100px"
