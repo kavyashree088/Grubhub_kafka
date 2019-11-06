@@ -11,7 +11,7 @@ router.get("/", (req, res) => {
   let body = {
     get: "all"
   };
-  kafka.make_request("userActions", { path: "get", body }, function(
+  kafka.make_request("userActions", { path: "get", body }, function (
     err,
     result
   ) {
@@ -30,7 +30,7 @@ router.post("/createUser", async (req, res) => {
     let lastName = req.body.lastName;
     let password = req.body.password;
     let email = req.body.email;
-    let hashPassword = bcrypt.hashSync(password, saltRounds);
+    let hashPassword = bcrypt.hashSync(password);
     console.log(hashPassword.length);
     var body = {
       firstName: firstName,
@@ -41,7 +41,7 @@ router.post("/createUser", async (req, res) => {
       address: "",
       profilePic: ""
     };
-    kafka.make_request("userActions", { path: "createUser", body }, function(
+    kafka.make_request("userActions", { path: "createUser", body }, function (
       err,
       result
     ) {
@@ -57,13 +57,13 @@ router.post("/createUser", async (req, res) => {
     return res.json({ message: error.message });
   }
 });
-router.post("/loginUser", async function(req, res) {
+router.post("/loginUser", async function (req, res) {
   try {
     let body = {
       email: req.body.email,
       password: req.body.password
     };
-    kafka.make_request("userActions", { path: "loginUser", body }, function(
+    kafka.make_request("userActions", { path: "loginUser", body }, function (
       err,
       result
     ) {
@@ -85,7 +85,7 @@ router.get("/userdetails/:email", (req, res) => {
   let body = {
     email: req.params.email
   };
-  kafka.make_request("userActions", { path: "userdetails", body }, function(
+  kafka.make_request("userActions", { path: "userdetails", body }, function (
     err,
     result
   ) {
@@ -104,7 +104,7 @@ router.put("/update/name", (req, res) => {
     firstName: req.body.firstName,
     lastName: req.body.lastName
   };
-  kafka.make_request("userActions", { path: "updateName", body }, function(
+  kafka.make_request("userActions", { path: "updateName", body }, function (
     err,
     result
   ) {
@@ -121,7 +121,7 @@ router.put("/update/email", (req, res) => {
     email: req.body.email,
     newEmail: req.body.newEmail
   };
-  kafka.make_request("userActions", { path: "updateEmail", body }, function(
+  kafka.make_request("userActions", { path: "updateEmail", body }, function (
     err,
     result
   ) {
@@ -141,7 +141,7 @@ router.put("/update/password", (req, res) => {
     email: req.body.email,
     hashPassword: hashPassword
   };
-  kafka.make_request("userActions", { path: "updatePassword", body }, function(
+  kafka.make_request("userActions", { path: "updatePassword", body }, function (
     err,
     result
   ) {
@@ -159,7 +159,7 @@ router.put("/update/address", (req, res) => {
     email: req.body.email,
     address: req.body.address
   };
-  kafka.make_request("userActions", { path: "updateAddress", body }, function(
+  kafka.make_request("userActions", { path: "updateAddress", body }, function (
     err,
     result
   ) {
@@ -177,7 +177,7 @@ router.put("/update/phoneNo", (req, res) => {
     email: req.body.email,
     phoneNo: req.body.phoneNo
   };
-  kafka.make_request("userActions", { path: "updatePhoneNo", body }, function(
+  kafka.make_request("userActions", { path: "updatePhoneNo", body }, function (
     err,
     result
   ) {
@@ -190,10 +190,10 @@ router.put("/update/phoneNo", (req, res) => {
 });
 
 var storage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function (req, file, cb) {
     cb(null, "uploads");
   },
-  filename: function(req, file, cb) {
+  filename: function (req, file, cb) {
     let newFileName = Date.now() + file.originalname;
     cb(null, newFileName);
   }
@@ -218,7 +218,7 @@ router.post("/update/profilePhoto", upload.single("imageFile"), (req, res) => {
   kafka.make_request(
     "userActions",
     { path: "updateProfilePhoto", body },
-    function(err, result) {
+    function (err, result) {
       if (err) {
         res.json({ message: err.message });
       } else {

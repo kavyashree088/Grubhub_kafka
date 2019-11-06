@@ -7,31 +7,17 @@ var { owner } = require("../models/OwnerSchema");
 var { restaurant } = require("../models/RestaurantSchema");
 var { menu } = require("../models/MenuSchema");
 const mongoose = require("mongoose");
+var kafka = require("../kafka/client");
 
 var jwt = require("jsonwebtoken");
 var passport = require("passport");
 var requireAuth = passport.authenticate("jwt", { session: false });
-function getConnection() {
-  mongoose.connect(
-    "mongodb+srv://root:root@clusterkc-cr6mm.mongodb.net/grubhub?retryWrites=true&w=majority",
-    { useNewUrlParser: true, poolSize: 10 },
-    function(err) {
-      if (err) {
-        console.log("ERROR! MONGO MONGOOSE");
-        throw err;
-      } else {
-        console.log("Successfully connected to MongoDB");
-      }
-    }
-  );
-  return mongoose.connection;
-}
 
 var storage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function (req, file, cb) {
     cb(null, "uploads");
   },
-  filename: function(req, file, cb) {
+  filename: function (req, file, cb) {
     let newFileName = Date.now() + file.originalname;
     cb(null, newFileName);
   }
@@ -48,258 +34,118 @@ router.post("/createOwner", (req, res) => {
   let restaurantName = req.body.restaurantName;
   let zipCode = req.body.zipCode;
 
-  var newRestaurant = new restaurant({
+  var newRestaurant = {
     name: restaurantName,
     address: "",
     phoneNo: "",
     cuisine: "",
     zipcode: zipCode,
     image: ""
-  });
-  var newOwner = new owner({
+  };
+  var body = {
     firstName: firstName,
     lastName: lastName,
     email: email,
     password: hashPassword,
     restaurant: newRestaurant
+  };
+
+  kafka.make_request("ownerActions", { path: "createOwner", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
   });
-  try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      console.log("Connection Successful!");
-      var result = await newOwner.save(function(err, owner) {
-        if (err) return console.error(err);
-        console.log(owner.firstName + " saved to bookstore collection.");
-      });
-      res.statusCode = 200;
-      console.log("here");
-      return res.send(result);
-    });
-  } catch (error) {
-    res.statusCode = 500;
-    console.log("err");
-    return res.json({ message: error.message });
-  }
 });
 
-router.post("/login", async function(req, res) {
-  try {
-    var db = getConnection();
-
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", function() {
-      console.log("Connection Successful!");
-      console.log(req.body.email);
-      owner
-        .find({
-          email: req.body.email // search query
-        })
-        .then(doc => {
-          console.log(doc);
-          if (doc.length !== 0) {
-            console.log("Success");
-            console.log(doc);
-            if (bcrypt.compareSync(req.body.password, doc[0].password)) {
-              console.log("true");
-              var token = {
-                signinSuccess: "success",
-                email: doc[0].email
-              };
-              var signed_token = jwt.sign(token, "cmpe273", {
-                expiresIn: 86400 // in seconds
-              });
-              res.statusCode = 200;
-              res.json({
-                message: "authentication done ",
-                token: signed_token,
-                userType: "owner",
-                user: doc
-              });
-            } else {
-              res.writeHead(400, {
-                "Content-Type": "text/plain"
-              });
-              res.end();
-            }
-          } else {
-            console.log("here");
-            res.statusCode = 500;
-            return res.json({ errors: ["Invalid Login"] });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          res.statusCode = 500;
-          return res.json({ errors: ["Invalid Login"] });
-        });
-    });
-  } catch (error) {
-    console.log("error");
-    res.statusCode = 500;
-    return res.json({ message: error.message });
-  }
+router.post("/login", async function (req, res) {
+  let body = {
+    email: req.body.email,
+    password: req.body.password
+  };
+  kafka.make_request("ownerActions", { path: "loginOwner", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.statusCode = result.status;
+      res.send(result);
+    }
+  });
 });
 
 router.get("/details/:email", (req, res) => {
-  console.log(req.params);
-  try {
-    var db = getConnection();
-
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", function() {
-      console.log("Connection Successful!");
-      owner
-        .find({
-          email: req.params.email // search query
-        })
-        .then(doc => {
-          console.log(doc);
-          if (doc.length !== 0) {
-            console.log("Success");
-            console.log(doc);
-            res.statusCode = 200;
-            res.end(JSON.stringify(doc));
-          } else {
-            console.log("here");
-            res.statusCode = 500;
-            return res.json({ errors: ["Invalid Login"] });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          res.statusCode = 500;
-          return res.json({ errors: ["Invalid Login"] });
-        });
-    });
-  } catch (error) {
-    return res.json({ message: error.message });
-  }
+  console.log("User Details " + req.params.email);
+  let body = {
+    email: req.params.email
+  };
+  kafka.make_request("ownerActions", { path: "ownerdetails", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.get("/restaurant/:email", (req, res) => {
-  try {
-    var db = getConnection();
-
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", function() {
-      console.log("Connection Successful!");
-      owner
-        .find({
-          email: req.params.email // search query
-        })
-        .then(doc => {
-          console.log(doc);
-          if (doc.length !== 0) {
-            console.log("Success");
-            console.log(doc);
-            res.statusCode = 200;
-            res.end(JSON.stringify(doc[0].restaurant));
-          } else {
-            console.log("here");
-            res.statusCode = 500;
-            return res.json({ errors: ["Invalid Login"] });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          res.statusCode = 500;
-          return res.json({ errors: ["Invalid Login"] });
-        });
-    });
-  } catch (error) {
-    res.statusCode = 500;
-    return res.json({ message: error.message });
-  }
+  console.log("User Details " + req.params.email);
+  let body = {
+    email: req.params.email
+  };
+  kafka.make_request(
+    "ownerActions",
+    { path: "restaurantDetails", body },
+    function (err, result) {
+      if (err) {
+        res.json({ message: err.message });
+      } else {
+        res.send(result);
+      }
+    }
+  );
 });
 
 router.get("/restaurantById/:id", (req, res) => {
-  try {
-    var db = getConnection();
-
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", function() {
-      console.log("Connection Successful!");
-      owner
-        .find(
-          {
-            "restaurant._id": req.params.id // search query
-          },
-          {
-            "restaurant._id": 1,
-            "restaurant.name": 1,
-            "restaurant.zipcode": 1,
-            "restaurant.address": 1,
-            "restaurant.phoneNo": 1,
-            "restaurant.cuisine": 1,
-            "restaurant.image": 1
-          }
-        )
-        .then(doc => {
-          console.log(doc);
-          if (doc.length !== 0) {
-            console.log("Success");
-            console.log(doc);
-            res.statusCode = 200;
-            res.end(JSON.stringify(doc[0].restaurant));
-          } else {
-            console.log("here");
-            res.statusCode = 500;
-            return res.json({ errors: ["Invalid Login"] });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          res.statusCode = 500;
-          return res.json({ errors: ["Invalid Login"] });
-        });
-    });
-  } catch (error) {
-    res.statusCode = 500;
-    return res.json({ message: error.message });
-  }
+  let body = {
+    id: req.params.id
+  };
+  kafka.make_request(
+    "ownerActions",
+    { path: "restaurantDetailsById", body },
+    function (err, result) {
+      if (err) {
+        res.json({ message: err.message });
+      } else {
+        res.send(result);
+      }
+    }
+  );
 });
 
 router.get("/menu/:id", (req, res) => {
-  try {
-    console.log("menu");
-    var db = getConnection();
-    var ObjectId = require("mongoose").Types.ObjectId;
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", function() {
-      console.log("Connection Successful!");
-      menu
-        .find({
-          "restaurant._id": req.params.id
-        })
-        .then(doc => {
-          console.log(doc);
-          if (doc.length !== 0) {
-            console.log("Success");
-            console.log(doc);
-            res.statusCode = 200;
-            res.end(JSON.stringify(doc));
-          } else {
-            console.log("here");
-            res.statusCode = 500;
-            return res.json({ errors: ["no menu"] });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          res.statusCode = 500;
-          return res.json({ errors: err.message });
-        });
-    });
-  } catch (error) {
-    res.statusCode = 500;
-    return res.json({ errors: ["Invalid Login"] });
-  }
+  let body = {
+    id: req.params.id
+  };
+  kafka.make_request("ownerActions", { path: "getMenu", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.post("/createmenu", upload.single("image"), (req, res) => {
@@ -310,55 +156,24 @@ router.post("/createmenu", upload.single("image"), (req, res) => {
     filePath = "";
   } else filePath = file.filename;
   console.log(filePath);
-  try {
-    var db = getConnection();
-    var restaurant = null;
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", function() {
-      owner
-        .find({
-          email: req.body.email
-        })
-        .then(doc => {
-          console.log("here");
-          console.log(doc);
-          if (doc.length !== 0) {
-            console.log("Success");
-            console.log(doc);
-            restaurant = doc[0].restaurant;
-            var newMenu = new menu({
-              name: req.body.name,
-              description: req.body.desc,
-              section: req.body.section,
-              price: req.body.price,
-              image: filePath,
-              restaurant: restaurant
-            });
-            var result = newMenu.save(function(err, menu) {
-              if (err) return console.error(err);
-              console.log(menu.name + " saved to bookstore collection.");
-            });
-            res.statusCode = 200;
-            console.log("here");
-            return res.send(result);
-          } else {
-            console.log("here");
-            res.statusCode = 500;
-            return res.json({ errors: ["no restaurant"] });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          res.statusCode = 500;
-          return res.json({ errors: err.message });
-        });
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    name: req.body.name,
+    description: req.body.desc,
+    section: req.body.section,
+    price: req.body.price,
+    image: filePath,
+    email: req.body.email
+  };
+  kafka.make_request("ownerActions", { path: "createMenu", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.put("/updatemenu", upload.single("image"), (req, res) => {
@@ -369,190 +184,119 @@ router.put("/updatemenu", upload.single("image"), (req, res) => {
     filePath = "";
   } else filePath = file.filename;
   console.log(filePath);
-  try {
-    var db = getConnection();
-    var ObjectId = require("mongoose").Types.ObjectId;
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      await menu.updateOne(
-        { _id: req.body.id },
-        {
-          name: req.body.itemName,
-          description: req.body.desc,
-          price: req.body.price,
-          section: req.body.section,
-          image: filePath
-        },
-        function(err, menu) {
-          if (err) {
-            res.statusCode = 500;
-            return res.json({ errors: err.message });
-          }
-          res.statusCode = 200;
-          return res.send(menu);
-        }
-      );
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    id: req.body.id,
+    name: req.body.itemName,
+    description: req.body.desc,
+    price: req.body.price,
+    section: req.body.section,
+    image: filePath
+  };
+  kafka.make_request("ownerActions", { path: "updateMenu", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.delete("/deletemenu/:id", (req, res) => {
-  try {
-    var db = getConnection();
-    var ObjectId = require("mongoose").Types.ObjectId;
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      await menu.remove({ _id: req.params.id }, function(err, menu) {
-        if (err) {
-          res.statusCode = 500;
-          return res.json({ errors: err.message });
-        }
-        res.statusCode = 200;
-        return res.send();
-      });
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    id: req.params.id
+  };
+  kafka.make_request("ownerActions", { path: "deleteMenu", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.put("/update/name", (req, res) => {
   console.log(req.body);
-  try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      owner.updateOne(
-        { email: req.body.email },
-        { firstName: req.body.firstName, lastName: req.body.lastName },
-        function(err, owner) {
-          if (err) {
-            res.statusCode = 500;
-            return res.json({ errors: err.message });
-          }
-          res.statusCode = 200;
-          return res.send(owner);
-        }
-      );
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    email: req.body.email,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName
+  };
+  kafka.make_request("ownerActions", { path: "updateName", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.put("/update/email", (req, res) => {
-  try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      owner.updateOne(
-        { email: req.body.email },
-        { email: req.body.newEmail },
-        function(err, owner) {
-          if (err) {
-            res.statusCode = 500;
-            return res.json({ errors: err.message });
-          }
-          res.statusCode = 200;
-          return res.send(owner);
-        }
-      );
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    email: req.body.email,
+    newEmail: req.body.newEmail
+  };
+  kafka.make_request("ownerActions", { path: "updateEmail", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.put("/update/password", (req, res) => {
   console.log(req.body);
   let hashPassword = bcrypt.hashSync(req.body.newPassword, saltRounds);
   console.log(hashPassword);
-  try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      owner.updateOne(
-        { email: req.body.email },
-        { password: hashPassword },
-        function(err, owner) {
-          if (err) {
-            res.statusCode = 500;
-            return res.json({ errors: err.message });
-          }
-          res.statusCode = 200;
-          return res.send(owner);
-        }
-      );
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    email: req.body.email,
+    hashPassword: hashPassword
+  };
+  kafka.make_request("ownerActions", { path: "updatePassword", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 router.put("/update/restaurantdetails", (req, res) => {
   console.log(req.body);
-  try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
-
-    db.once("open", async function() {
-      console.log("Connection Successful!");
-      await owner.updateOne(
-        {
-          "restaurant._id": req.body.id
-        },
-        {
-          "restaurant.name": req.body.name,
-          "restaurant.address": req.body.address,
-          "restaurant.phoneNo": req.body.phoneNo,
-          "restaurant.zipcode": req.body.zipcode,
-          "restaurant.cuisine": req.body.cuisine
-        },
-        function(err, owner) {
-          if (err) {
-            res.statusCode = 500;
-            return res.json({ errors: err.message });
-          }
-          menu.updateMany(
-            {
-              "restaurant._id": req.body.id
-            },
-            {
-              "restaurant.name": req.body.name,
-              "restaurant.address": req.body.address,
-              "restaurant.phoneNo": req.body.phoneNo,
-              "restaurant.zipcode": req.body.zipcode,
-              "restaurant.cuisine": req.body.cuisine
-            },
-            function(err, result) {
-              if (err) {
-                console.log(err);
-              }
-              console.log(result);
-            }
-          );
-          res.statusCode = 200;
-          return res.send(owner);
-        }
-      );
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    id: req.body.id,
+    name: req.body.name,
+    address: req.body.address,
+    phoneNo: req.body.phoneNo,
+    zipcode: req.body.zipcode,
+    cuisine: req.body.cuisine
+  };
+  kafka.make_request(
+    "ownerActions",
+    { path: "updateRestaurantDetails", body },
+    function (err, result) {
+      if (err) {
+        res.json({ message: err.message });
+      } else {
+        res.send(result);
+      }
+    }
+  );
 });
 
 router.post(
@@ -568,59 +312,39 @@ router.post(
     }
     let filePath = file.filename;
     console.log(filePath);
-    try {
-      var db = getConnection();
-      db.on("error", console.error.bind(console, "connection error:"));
-
-      db.once("open", async function() {
-        console.log("Connection Successful!");
-        await owner.updateOne(
-          {
-            "restaurant._id": req.body.id
-          },
-          {
-            "restaurant.image": filePath
-          },
-          function(err, owner) {
-            if (err) {
-              res.statusCode = 500;
-              return res.json({ errors: err.message });
-            }
-            res.statusCode = 200;
-            return res.send(owner);
-          }
-        );
-      });
-    } catch (error) {
-      console.log(error);
-      res.statusCode = 500;
-      return res.json({ errors: error.message });
-    }
+    let body = {
+      id: req.body.id,
+      image: filePath
+    };
+    kafka.make_request(
+      "ownerActions",
+      { path: "updateRestaurantImage", body },
+      function (err, result) {
+        if (err) {
+          res.json({ message: err.message });
+        } else {
+          res.send(result);
+        }
+      }
+    );
   }
 );
 
 router.delete("/deleteSection/:name/:id", (req, res) => {
-  try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
-      await menu.remove(
-        { "restaurant._id": req.params.id, section: req.params.name },
-        function(err, menu) {
-          if (err) {
-            res.statusCode = 500;
-            return res.json({ errors: err.message });
-          }
-          res.statusCode = 200;
-          return res.send();
-        }
-      );
-    });
-  } catch (error) {
-    console.log(error);
-    res.statusCode = 500;
-    return res.json({ errors: error.message });
-  }
+  let body = {
+    id: req.params.id,
+    section: req.params.name
+  };
+  kafka.make_request("ownerActions", { path: "deleteSection", body }, function (
+    err,
+    result
+  ) {
+    if (err) {
+      res.json({ message: err.message });
+    } else {
+      res.send(result);
+    }
+  });
 });
 
 module.exports = router;

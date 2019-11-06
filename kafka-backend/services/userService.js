@@ -1,6 +1,6 @@
 var { user } = require("../models/UserSchema");
 const mongoose = require("mongoose");
-var bcrypt = require("bcrypt");
+var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 var passport = require("passport");
 
@@ -44,7 +44,7 @@ function getConnection() {
   mongoose.connect(
     "mongodb://root:root@clusterkc-shard-00-00-cr6mm.mongodb.net:27017,clusterkc-shard-00-01-cr6mm.mongodb.net:27017,clusterkc-shard-00-02-cr6mm.mongodb.net:27017/grubhub?ssl=true&replicaSet=ClusterKC-shard-0&authSource=admin&retryWrites=true&w=majority",
     { useNewUrlParser: true, poolSize: 10 },
-    function(err) {
+    function (err) {
       if (err) {
         console.log(err);
         console.log("ERROR! MONGO MONGOOSE");
@@ -60,16 +60,16 @@ function getConnection() {
 async function get(msg, callback) {
   console.log(msg);
   try {
-    var db = getConnection();
-    db.on("error", console.error.bind(console, "connection error:"));
+    //var db = getConnection();
+    //db.on("error", console.error.bind(console, "connection error:"));
 
-    db.once("open", async function() {
-      console.log("Connection Successful!");
-      var users = await user.find({});
-      console.log("got users");
-      console.log(JSON.stringify(users));
-      callback(null, users);
-    });
+    //db.once("open", async function() {
+    console.log("Connection Successful!");
+    var users = await user.find({});
+    console.log("got users");
+    console.log(JSON.stringify(users));
+    callback(null, users);
+    //});
   } catch (error) {
     console.log("error");
     console.log(error);
@@ -94,9 +94,9 @@ async function createUser(msg, callback) {
       address: "",
       profilePic: ""
     });
-    db.once("open", async function() {
+    db.once("open", async function () {
       console.log("Connection Successful!");
-      var result = newUser.save(function(err, user) {
+      var result = newUser.save(function (err, user) {
         if (err)
           callback(null, {
             status: 400,
@@ -122,7 +122,7 @@ async function loginUser(msg, callback) {
 
     db.on("error", console.error.bind(console, "connection error:"));
 
-    db.once("open", function() {
+    db.once("open", function () {
       console.log("Connection Successful!");
       user
         .find({
@@ -184,7 +184,7 @@ async function userdetails(msg, callback) {
   try {
     db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", function() {
+    db.once("open", function () {
       console.log("Connection Successful!");
       user
         .find({
@@ -213,11 +213,11 @@ async function updateName(msg, callback) {
   try {
     var db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
+    db.once("open", async function () {
       user.updateOne(
         { email: msg.body.email },
         { firstName: msg.body.firstName, lastName: msg.body.lastName },
-        function(err, user) {
+        function (err, user) {
           if (err) {
             callback(null, {
               status: 400,
@@ -241,11 +241,11 @@ async function updateEmail(msg, callback) {
   try {
     var db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
+    db.once("open", async function () {
       user.updateOne(
         { email: msg.body.email },
         { email: msg.body.newEmail },
-        function(err, user) {
+        function (err, user) {
           if (err) {
             callback(null, {
               status: 400,
@@ -269,11 +269,11 @@ async function updatePassword(msg, callback) {
   try {
     var db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
+    db.once("open", async function () {
       user.updateOne(
         { email: msg.body.email },
         { password: msg.body.hashPassword },
-        function(err, user) {
+        function (err, user) {
           if (err) {
             callback(null, {
               status: 400,
@@ -297,11 +297,11 @@ async function updateAddress(msg, callback) {
   try {
     var db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
+    db.once("open", async function () {
       user.updateOne(
         { email: msg.body.email },
         { address: msg.body.address },
-        function(err, user) {
+        function (err, user) {
           if (err) {
             callback(null, {
               status: 400,
@@ -325,11 +325,11 @@ async function updatePhoneNo(msg, callback) {
   try {
     var db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
+    db.once("open", async function () {
       user.updateOne(
         { email: msg.body.email },
         { phoneNo: msg.body.phoneNo },
-        function(err, user) {
+        function (err, user) {
           if (err) {
             callback(null, {
               status: 400,
@@ -353,11 +353,11 @@ async function updateProfilePhoto(msg, callback) {
   try {
     var db = getConnection();
     db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", async function() {
+    db.once("open", async function () {
       user.updateOne(
         { email: msg.body.email },
         { profilePic: msg.body.profilePic },
-        function(err, user) {
+        function (err, user) {
           if (err) {
             callback(null, {
               status: 400,
